@@ -1,0 +1,15 @@
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "worldgen"
+version = "0.1.0"
+description = "A simple and highly customizable procedural world generator"
+readme = "README.md"
+license = "MIT"
+authors = ["Dtar380"]
+maintainers = ["Dtar380"]
+
+[tool.poetry.dependencies]
+python = "^3.13"
