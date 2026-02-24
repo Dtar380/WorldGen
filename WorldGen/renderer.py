@@ -5,11 +5,15 @@ from matplotlib.colors import Colormap
 from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
 import numpy as np
 import numpy.typing as npt
+from PIL import Image
 
 from .biome import Biome
 
 
 class Renderer:
+
+    def __init__(self, biomes: list[Biome]) -> None:
+        self._biomes = biomes
 
     @staticmethod
     def save_map(
@@ -30,9 +34,82 @@ class Renderer:
 
     @staticmethod
     def biome_cmap(biomes: list[Biome]) -> tuple[Colormap, Normalize]:
-
         colors = [biome.color for biome in biomes]
         cmap = ListedColormap(colors)
         bounds = np.arange(-0.5, len(biomes), 1)
         norm = BoundaryNorm(bounds, cmap.N)
         return cmap, norm
+
+    def _compute_normals(
+        self, elevation: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
+        padded = np.pad(elevation, 1, mode="edge")
+
+        dx = padded[1:-1, 2:] - padded[1:-1, :-2]
+        dy = padded[2:, 1:-1] - padded[:-2, 1:-1]
+
+        length = np.sqrt(dx**2 + dy**2 + 1)
+        nx = -dx / length
+        ny = -dy / length
+        nz = np.ones_like(elevation) / length
+
+        return np.stack([nx, ny, nz], axis=-1)
+
+    def _hex_to_rgb(self, hex_color: str) -> tuple[float, float, float]:
+        return (
+            int(hex_color[1:3], 16) / 255,
+            int(hex_color[3:5], 16) / 255,
+            int(hex_color[5:7], 16) / 255,
+        )
+
+    @staticmethod
+    def hour_to_azimuth(
+        hour: float,
+        sun_hours: tuple[float, float],
+        altitud: float,
+    ) -> float:
+        dawn, dusk = sun_hours
+        azimuth = 90 + ((hour - dawn) / (dusk - dawn)) * 180
+        return azimuth if altitud <= 0 else (azimuth + 180) % 360
+
+    def _sun(
+        self,
+        altitud: float = -45,
+        azimuth: float = 12,
+    ) -> npt.NDArray[np.float64]:
+        alt = np.radians(90 - altitud)
+        azi = np.radians(azimuth)
+        x = np.cos(alt) * np.sin(azi)
+        y = np.cos(alt) * np.cos(azi)
+        z = np.sin(alt)
+        return np.array([x, y, z])
+
+    def render(
+        self,
+        elevation: npt.NDArray[np.float64],
+        biome_map: npt.NDArray[np.int16],
+        sea_level: float = 0.5,
+        relief: float = 100.0,
+        ambient: float = 0.4,
+        sun_altitud: float = -45,
+        sun_azimuth: float = 180,
+    ) -> Image.Image:
+        flat_elevation = elevation.copy()
+        flat_elevation[elevation <= sea_level] = sea_level
+        normals = self._compute_normals(flat_elevation * relief)
+        sun = self._sun(sun_altitud, sun_azimuth)
+
+        h, w = elevation.shape
+        colors = np.zeros((h, w, 3))
+        for i, biome in enumerate(self._biomes):
+            mask = biome_map == i
+            colors[mask] = self._hex_to_rgb(biome.color)
+
+        intensity = ambient + (1 - ambient) * np.maximum(0, np.dot(normals, sun))
+        colors *= intensity[:, :, np.newaxis]
+
+        print("sun:", sun)
+        print("normals min/max:", normals.min(), normals.max())
+        print("intensity min/max:", intensity.min(), intensity.max())
+
+        return Image.fromarray((colors * 255).astype(np.uint8))
