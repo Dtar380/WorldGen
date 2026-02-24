@@ -8,6 +8,7 @@ import numpy as np
 import numpy.typing as npt
 
 from .noise import Noise
+from .biome import Biome
 
 
 ARRAY_64 = npt.NDArray[np.float64]
@@ -87,7 +88,6 @@ class WorldGen:
             simplex=self._simplex,
         )
         f = np.minimum(1, (1 - elevation) / (1 - self._sea_level))
-        print(f ** 2)
         chunk += chunk * k * f ** 2
         normalised_chunk = (chunk - chunk.min()) / (chunk.max() - chunk.min())
 
@@ -123,3 +123,30 @@ class WorldGen:
         normalised_chunk = (chunk - chunk.min()) / (chunk.max() - chunk.min())
 
         return normalised_chunk
+
+    def assign_biomes(
+        self,
+        elevation: ARRAY_64,
+        humidity: ARRAY_64,
+        temperature: ARRAY_64,
+        biomes: list[Biome],
+    ) -> npt.NDArray[np.int16]:
+
+        marine_mask = elevation <= self._sea_level
+
+        result = np.full(elevation.shape, -1, dtype=np.int16)
+        min_dist = np.full(elevation.shape, np.inf)
+
+        for i, biome in enumerate(biomes):
+            valid = (
+                (elevation >= biome.elevation_range[0]) & (elevation <= biome.elevation_range[1])
+                & (humidity >= biome.humidity_range[0]) & (humidity <= biome.humidity_range[1])
+                & (temperature >= biome.temperature_range[0]) & (temperature <= biome.temperature_range[1])
+                & (marine_mask == biome.marine)
+            )
+            dist = biome.distance(elevation, humidity, temperature)
+            update = valid & (dist < min_dist)
+            result[update] = i
+            min_dist[update] = dist[update]
+
+        return result
