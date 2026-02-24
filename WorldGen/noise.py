@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
+
 ARRAY_64 = npt.NDArray[np.float64]
 
 
@@ -242,9 +243,10 @@ class Noise:
             value, temp_dx, temp_dy = noise_func(x * frequency, y * frequency)
             dx += temp_dx
             dy += temp_dy
-            result += amplitud * value
+            weight = 1 / (1 + k * np.sqrt(dx**2 + dy**2))
+            result += amplitud * value * (weight if _ == 0 else 1)
             max_amplitud += amplitud
             frequency *= lacunarity
-            amplitud *= persistance / (1 + k * np.sqrt(dx**2 + dy**2))
+            amplitud *= persistance * weight
 
         return result / max_amplitud
