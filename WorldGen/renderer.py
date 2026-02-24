@@ -76,7 +76,7 @@ class Renderer:
     def _sun(
         self,
         altitud: float = -45,
-        azimuth: float = 12,
+        azimuth: float = 180,
     ) -> npt.NDArray[np.float64]:
         alt = np.radians(90 - altitud)
         azi = np.radians(azimuth)
@@ -120,6 +120,8 @@ class Renderer:
         self,
         elevation: npt.NDArray[np.float64],
         biome_map: npt.NDArray[np.int16],
+        wave_map: npt.NDArray[np.float64] | None = None,
+        wave_amplitude: float = 0.01,
         sea_level: float = 0.5,
         biome_blend: int = 10,
         relief: float = 100.0,
@@ -129,6 +131,8 @@ class Renderer:
     ) -> Image.Image:
         flat_elevation = elevation.copy()
         flat_elevation[elevation <= sea_level] = sea_level
+        if wave_map is not None:
+            flat_elevation[elevation <= sea_level] += wave_map[elevation <= sea_level] * wave_amplitude
         normals = self._compute_normals(flat_elevation * relief)
         sun = self._sun(sun_altitud, sun_azimuth)
 

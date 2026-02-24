@@ -29,6 +29,7 @@ class WorldGen:
         self._noise_elevation = Noise(self._hash_seed(f"{self._seed}_elevation"))
         self._noise_humidity = Noise(self._hash_seed(f"{self._seed}_humidity"))
         self._noise_temperature = Noise(self._hash_seed(f"{self._seed}_temperature"))
+        self._noise_waves = Noise(self._hash_seed(f"{self._seed}_waves"))
 
     def _hash_seed(self, seed: Any) -> int:
         return int(hashlib.md5(str(seed).encode()).hexdigest(), 16) & (2**32 - 1)
@@ -150,3 +151,32 @@ class WorldGen:
             min_dist[update] = dist[update]
 
         return result
+
+    def generate_waves(
+        self,
+        origin: tuple[float, float],
+        size: int,
+        scale: float,
+        wave_frequency: float = 8.0,
+        octaves: int = 4,
+        lacunarity: float = 2.0,
+        persistance: float = 0.5,
+    ) -> ARRAY_64:
+        ox, oy = origin
+        wave_scale = scale * wave_frequency
+
+        xs = np.linspace(ox - wave_scale, ox + wave_scale, size)
+        ys = np.linspace(oy - wave_scale, oy + wave_scale, size)
+        xx, yy = np.meshgrid(xs, ys)
+
+        chunk = self._noise_waves.fbm(
+            xx,
+            yy,
+            octaves=octaves,
+            lacunarity=lacunarity,
+            persistance=persistance,
+            simplex=self._simplex,
+        )
+        normalised_chunk = (chunk - chunk.min()) / (chunk.max() - chunk.min())
+
+        return normalised_chunk
