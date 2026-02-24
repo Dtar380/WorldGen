@@ -8,7 +8,7 @@ import numpy.typing as npt
 class Renderer:
 
     @staticmethod
-    def show_map(
+    def save_map(
         array: npt.NDArray[np.float64],
         path: str,
         title: str = "",
