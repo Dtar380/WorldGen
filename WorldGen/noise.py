@@ -21,7 +21,9 @@ class Noise:
         tp = t - 1
         return 30 * t * t * tp * tp
 
-    def _grad(self, hash_: ARRAY_64, x: npt.ArrayLike, y: npt.ArrayLike) -> ARRAY_64:
+    def _grad(
+        self, hash_: ARRAY_64, x: npt.ArrayLike, y: npt.ArrayLike
+    ) -> ARRAY_64:
         h = hash_.astype(int) & 7
         u = np.where(h < 4, x, y)
         v = np.where(h < 4, y, x)

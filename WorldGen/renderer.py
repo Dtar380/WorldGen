@@ -35,9 +35,9 @@ class Renderer:
 
     @staticmethod
     def biome_cmap(biomes: list[Biome]) -> tuple[Colormap, Normalize]:
-        colors = [biome.color for biome in biomes]
+        colors = ["#FF00FF"] + [biome.color for biome in biomes]
         cmap = ListedColormap(colors)
-        bounds = np.arange(-0.5, len(biomes), 1)
+        bounds = np.arange(-1.5, len(biomes), 1)
         norm = BoundaryNorm(bounds, cmap.N)
         return cmap, norm
 
@@ -141,6 +141,7 @@ class Renderer:
         for i, biome in enumerate(self._biomes):
             mask = biome_map == i
             colors[mask] = self._hex_to_rgb(biome.color)
+        colors[biome_map == -1] = self._hex_to_rgb("#FF00FF")
         colors = self._biome_blend(
             colors, biome_map, elevation, sea_level, biome_blend
         )

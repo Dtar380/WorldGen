@@ -132,7 +132,6 @@ class WorldGen:
         temperature: ARRAY_64,
         biomes: list[Biome],
     ) -> npt.NDArray[np.int16]:
-
         marine_mask = elevation <= self._sea_level
 
         result = np.full(elevation.shape, -1, dtype=np.int16)
@@ -140,9 +139,9 @@ class WorldGen:
 
         for i, biome in enumerate(biomes):
             valid = (
-                (elevation >= biome.elevation_range[0]) & (elevation <= biome.elevation_range[1])
-                & (humidity >= biome.humidity_range[0]) & (humidity <= biome.humidity_range[1])
-                & (temperature >= biome.temperature_range[0]) & (temperature <= biome.temperature_range[1])
+                (elevation > biome.elevation_range[0]) & (elevation <= biome.elevation_range[1])
+                & (humidity > biome.humidity_range[0]) & (humidity <= biome.humidity_range[1])
+                & (temperature > biome.temperature_range[0]) & (temperature <= biome.temperature_range[1])
                 & (marine_mask == biome.marine)
             )
             dist = biome.distance(elevation, humidity, temperature)
