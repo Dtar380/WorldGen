@@ -123,7 +123,7 @@ class Renderer:
         wave_map: npt.NDArray[np.float64] | None = None,
         wave_amplitude: float = 0.01,
         sea_level: float = 0.5,
-        biome_blend: int = 10,
+        biome_blend: int = 5,
         relief: float = 100.0,
         ambient: float = 0.4,
         sun_altitud: float = -45,
