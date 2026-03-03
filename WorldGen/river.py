@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import numpy as np
+import numpy.typing as npt
+
 
 @dataclass
 class River:
 
-    path: list[tuple[float, float]]
+    path: npt.NDArray[np.float16]
     initial_flow: float = 1
     width_growth: float = 0.5
     depth_ratio: float = 0.1

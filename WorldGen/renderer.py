@@ -34,6 +34,45 @@ class Renderer:
         plt.close()
 
     @staticmethod
+    def show_map(
+        array: npt.NDArray[np.float64 | np.int16],
+        title: str = "",
+        cmap: str | Colormap = "gray",
+        norm: Normalize | None = None,
+    ) -> None:
+        plt.figure(figsize=(8, 8))
+        plt.title(title)
+        plt.imshow(array, cmap=cmap, norm=norm, origin="upper")
+        plt.colorbar()
+        plt.axis("off")
+        plt.tight_layout()
+        plt.show()
+
+    @staticmethod
+    def parse_river_map(
+        rivers: list[npt.NDArray],
+        origin: tuple[float, float],
+        size: int,
+        scale: float,
+        title: str = "Rivers",
+        path: str | None = None,
+    ) -> None:
+        ox, oy = origin
+        mapa = np.zeros((size, size))
+        pixels_per_unit = size / (scale * 2)
+        for river in rivers:
+            for x, y in river:
+                px = int((x - (ox - scale)) * pixels_per_unit)
+                py = int((y - (oy - scale)) * pixels_per_unit)
+                if 0 <= px < size and 0 <= py < size:
+                    mapa[py, px] = 1.0
+
+        if path:
+            Renderer.save_map(mapa, path, title, cmap="Blues")
+        else:
+            Renderer.show_map(mapa, title, cmap="Blues")
+
+    @staticmethod
     def biome_cmap(biomes: list[Biome]) -> tuple[Colormap, Normalize]:
         colors = ["#FF00FF"] + [biome.color for biome in biomes]
         cmap = ListedColormap(colors)
