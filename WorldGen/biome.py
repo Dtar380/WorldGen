@@ -9,7 +9,7 @@ import numpy.typing as npt
 ARRAY_64 = npt.NDArray[np.float64]
 
 
-@dataclass()
+@dataclass
 class Biome:
 
     elevation_range: tuple[float, float]
