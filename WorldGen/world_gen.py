@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 import hashlib
+import os
+import pickle
 from random import randint
 from typing import Any
 
 import numpy as np
 import numpy.typing as npt
+from scipy.interpolate import CubicSpline  # type: ignore
+from scipy.ndimage import gaussian_filter  # type: ignore
 
 from .noise import Noise
 from .biome import Biome
+from .river import River
 
 
 ARRAY_64 = npt.NDArray[np.float64]
@@ -20,10 +25,18 @@ class WorldGen:
         self,
         seed: Any | None = None,
         sea_level: float = 0.5,
+        scale: float = 500000,
+        max_height: float = 2500,
         simplex: bool = False,
+        cache_dir: str = ".cache"
     ) -> None:
+        self._cache = cache_dir
+        os.makedirs(self._cache, exist_ok=True)
+
         self._seed = seed if seed is not None else randint(-2**32, 2**32)
         self._sea_level = sea_level
+        self._scale = scale
+        self._max_height = max_height
         self._simplex = simplex
 
         self._noise_elevation = Noise(self._hash_seed(f"{self._seed}_elevation"))
@@ -31,8 +44,22 @@ class WorldGen:
         self._noise_temperature = Noise(self._hash_seed(f"{self._seed}_temperature"))
         self._noise_waves = Noise(self._hash_seed(f"{self._seed}_waves"))
 
+        self._rivers = self._load_rivers()
+
     def _hash_seed(self, seed: Any) -> int:
         return int(hashlib.md5(str(seed).encode()).hexdigest(), 16) & (2**32 - 1)
+
+    def _load_rivers(self) -> list[River]:
+        cache_path = os.path.join(self._cache, f"{self._seed}_rivers.pkl")
+        if os.path.exists(cache_path):
+            with open(cache_path, "rb") as f:
+                rivers: list[River] = pickle.load(f)
+        else:
+            rivers = self._generate_river_skeletons()
+            with open(cache_path, "wb") as f:
+                pickle.dump(rivers, f)
+
+        return rivers
 
     def generate_elevation_map(
         self,
