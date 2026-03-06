@@ -11,6 +11,9 @@ from scipy.ndimage import binary_dilation, gaussian_filter  # type: ignore
 from .biome import Biome
 
 
+ARRAY_64 = npt.NDArray[np.float64]
+
+
 class Renderer:
 
     def __init__(self, biomes: list[Biome]) -> None:
@@ -60,13 +63,15 @@ class Renderer:
         ox, oy = origin
         mapa = np.zeros((size, size))
         pixels_per_unit = size / (scale * 2)
-        for river in rivers:
+        count = 0
+        for i, river in enumerate(rivers):
             for x, y in river:
                 px = int((x - (ox - scale)) * pixels_per_unit)
                 py = int((y - (oy - scale)) * pixels_per_unit)
                 if 0 <= px < size and 0 <= py < size:
                     mapa[py, px] = 1.0
-
+                    count += 1
+            print(f"River {i}: {count} pixels painted")
         if path:
             Renderer.save_map(mapa, path, title, cmap="Blues")
         else:
@@ -157,9 +162,10 @@ class Renderer:
 
     def render(
         self,
-        elevation: npt.NDArray[np.float64],
+        elevation: ARRAY_64,
         biome_map: npt.NDArray[np.int16],
-        wave_map: npt.NDArray[np.float64] | None = None,
+        rivers: ARRAY_64 | None = None,
+        wave_map: ARRAY_64 | None = None,
         wave_amplitude: float = 0.01,
         sea_level: float = 0.5,
         biome_blend: int = 5,
@@ -184,6 +190,9 @@ class Renderer:
         colors = self._biome_blend(
             colors, biome_map, elevation, sea_level, biome_blend
         )
+        if rivers is not None:
+            ocean_color = np.array(self._hex_to_rgb("#0090FF"))
+            colors[rivers < 0] = ocean_color
 
         intensity = ambient + (1 - ambient) * np.maximum(0, np.dot(normals, sun))
         colors *= intensity[:, :, np.newaxis]
