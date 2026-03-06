@@ -8,8 +8,6 @@ from typing import Any
 
 import numpy as np
 import numpy.typing as npt
-from scipy.interpolate import CubicSpline  # type: ignore
-from scipy.ndimage import gaussian_filter  # type: ignore
 
 from .noise import Noise
 from .biome import Biome
@@ -44,22 +42,8 @@ class WorldGen:
         self._noise_temperature = Noise(self._hash_seed(f"{self._seed}_temperature"))
         self._noise_waves = Noise(self._hash_seed(f"{self._seed}_waves"))
 
-        self._rivers = self._load_rivers()
-
     def _hash_seed(self, seed: Any) -> int:
         return int(hashlib.md5(str(seed).encode()).hexdigest(), 16) & (2**32 - 1)
-
-    def _load_rivers(self) -> list[River]:
-        cache_path = os.path.join(self._cache, f"{self._seed}_rivers.pkl")
-        if os.path.exists(cache_path):
-            with open(cache_path, "rb") as f:
-                rivers: list[River] = pickle.load(f)
-        else:
-            rivers = self._generate_river_skeletons()
-            with open(cache_path, "wb") as f:
-                pickle.dump(rivers, f)
-
-        return rivers
 
     def generate_elevation_map(
         self,
